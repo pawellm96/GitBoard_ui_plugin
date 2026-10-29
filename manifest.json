@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "GitBoard",
+  "version": "1.0.0",
+  "minimum_chrome_version": "111",
+  "description": "На GitHub Projects переносит субтаски вместе с родительской задачей и умеет сворачивать их в список на карточке.",
+  "homepage_url": "https://github.com/pawellm96/GitBoard_ui_plugin",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://github.com/*",
+    "https://api.github.com/*"
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "GitBoard",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["src/core.js", "src/injected/hook.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://github.com/*"],
+      "js": [
+        "src/core.js",
+        "src/shared/settings.js",
+        "src/api/github.js",
+        "src/content/dom.js",
+        "src/content/panel.js",
+        "src/content/boot.js"
+      ],
+      "css": ["src/content/content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

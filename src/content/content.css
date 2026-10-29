@@ -1,0 +1,147 @@
+.gitboard-card-hidden {
+  display: none !important;
+}
+
+.gitboard-nest {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--borderColor-muted, var(--color-border-muted, #d0d7de));
+}
+
+.gitboard-nest-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.gitboard-nest-count,
+.gitboard-nest-meta {
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.gitboard-nest-count {
+  margin-left: auto;
+}
+
+.gitboard-nest-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.gitboard-nest-list-nested {
+  margin-left: 12px;
+  padding-left: 8px;
+  border-left: 2px solid var(--borderColor-muted, var(--color-border-muted, #d0d7de));
+}
+
+.gitboard-nest-item {
+  margin: 0 0 8px;
+}
+
+.gitboard-nest-link {
+  color: var(--fgColor-accent, var(--color-accent-fg, #0969da));
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.gitboard-nest-link:hover {
+  text-decoration: underline;
+}
+
+.gitboard-panel {
+  position: fixed;
+  z-index: 10000;
+  right: 16px;
+  bottom: 16px;
+  width: 300px;
+  box-sizing: border-box;
+  border: 1px solid var(--borderColor-default, var(--color-border-default, #d0d7de));
+  border-radius: 12px;
+  background: var(--bgColor-default, var(--color-canvas-default, #ffffff));
+  color: var(--fgColor-default, var(--color-fg-default, #1f2328));
+  box-shadow: 0 8px 24px rgba(31, 35, 40, 0.18);
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.gitboard-panel[hidden] {
+  display: none !important;
+}
+
+.gitboard-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.gitboard-panel-title {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.gitboard-panel-project {
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+}
+
+.gitboard-icon-button {
+  border: 0;
+  border-radius: 8px;
+  background: var(--bgColor-muted, var(--color-neutral-subtle, #f6f8fa));
+  color: inherit;
+  min-width: 28px;
+  height: 28px;
+  cursor: pointer;
+}
+
+.gitboard-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.gitboard-panel-collapsed .gitboard-panel-body,
+.gitboard-panel-collapsed .gitboard-panel-project {
+  display: none;
+}
+
+.gitboard-panel-collapsed {
+  width: auto;
+}
+
+.gitboard-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.gitboard-check input {
+  margin-top: 2px;
+}
+
+.gitboard-hint,
+.gitboard-status {
+  margin: 0;
+}
+
+.gitboard-hint {
+  color: var(--fgColor-muted, var(--color-fg-muted, #656d76));
+}
+
+.gitboard-status {
+  font-weight: 600;
+}
