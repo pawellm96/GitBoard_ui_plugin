@@ -129,20 +129,37 @@
     return payload.data;
   }
 
-  function sessionGraphql(query, variables) {
-    return fetch(SESSION_URL, {
+  function postGraphql(url, query, variables) {
+    var headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest'
+    };
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    var csrf = meta ? meta.getAttribute('content') || '' : '';
+    if (csrf) headers['X-CSRF-Token'] = csrf;
+
+    return fetch(url, {
       method: 'POST',
       credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
+      headers: headers,
       body: JSON.stringify({ query: query, variables: variables || {} })
     }).then(function (response) {
+      if (response.status === 404 || response.status === 405) {
+        var missing = new Error('GraphQL endpoint недоступен');
+        missing.retry = true;
+        throw missing;
+      }
       return response.text().then(function (text) {
         return unwrapGraphql(response.status, text);
       });
+    });
+  }
+
+  function sessionGraphql(query, variables) {
+    return postGraphql(SESSION_URL, query, variables).catch(function (error) {
+      if (!error || !error.retry) throw error;
+      return postGraphql(location.origin + '/graphql', query, variables);
     });
   }
 
@@ -392,23 +409,7 @@
     return Promise.resolve();
   }
 
-  function findPathByItemId(board, itemId) {
-    var nodes = board.hierarchy && board.hierarchy.nodes;
-    if (!nodes) return null;
-    var paths = Object.keys(nodes);
-    for (var i = 0; i < paths.length; i += 1) {
-      if (nodes[paths[i]].itemId === itemId) return paths[i];
-    }
-    return null;
-  }
-
   function moveDescendants(board, update, settings) {
-    var originPath = findPathByItemId(board, update.itemId);
-    var origin = originPath ? board.hierarchy.nodes[originPath] : null;
-    if (!origin || !origin.children || origin.children.length === 0) {
-      return Promise.resolve({ moved: [], failed: [], skipped: [] });
-    }
-
     var moved = [];
     var failed = [];
     var skipped = [];

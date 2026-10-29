@@ -13,6 +13,7 @@
   }
 
   function cardElement(anchor) {
+    if (anchor.closest('[role="dialog"], dialog')) return null;
     var ownPath = core.normalizeIssuePath(anchor.getAttribute('href'));
     if (!ownPath) return null;
     var node = anchor;
@@ -29,9 +30,21 @@
         }
       }
       if (foreign) return node;
+      var rect = parent.getBoundingClientRect();
+      if (rect.height > 420 || rect.width > 680) return node;
       node = parent;
     }
     return null;
+  }
+
+  if (!window.__gitboardDragGuard) {
+    window.__gitboardDragGuard = true;
+    window.addEventListener('pointerdown', function (event) {
+      var target = event.target;
+      if (target instanceof Element && target.closest('.gitboard-nest')) {
+        event.stopPropagation();
+      }
+    }, true);
   }
 
   function cardEntries() {
