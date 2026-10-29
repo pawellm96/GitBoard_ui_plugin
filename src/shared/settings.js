@@ -10,21 +10,39 @@
     token: ''
   };
 
+  var cached = null;
+
+  function remember(settings) {
+    cached = Object.assign({}, DEFAULTS, settings || {});
+    return cached;
+  }
+
   function load() {
-    return chrome.storage.local.get(KEY).then(function (stored) {
-      return Object.assign({}, DEFAULTS, stored[KEY] || {});
-    });
+    if (cached) return Promise.resolve(Object.assign({}, cached));
+    try {
+      return chrome.storage.local.get(KEY).then(function (stored) {
+        return remember((stored && stored[KEY]) || {});
+      }, function () {
+        return remember(DEFAULTS);
+      });
+    } catch (error) {
+      return Promise.resolve(remember(DEFAULTS));
+    }
   }
 
   function save(patch) {
-    return load().then(function (current) {
-      var next = Object.assign({}, current, patch || {});
-      var payload = {};
-      payload[KEY] = next;
+    var next = remember(Object.assign({}, cached || DEFAULTS, patch || {}));
+    var payload = {};
+    payload[KEY] = next;
+    try {
       return chrome.storage.local.set(payload).then(function () {
-        return next;
+        return Object.assign({}, next);
+      }, function () {
+        return Object.assign({}, next);
       });
-    });
+    } catch (error) {
+      return Promise.resolve(Object.assign({}, next));
+    }
   }
 
   root.GitBoardSettings = {

@@ -2,10 +2,7 @@
   'use strict';
 
   var FIELDS = [
-    ['followEnabled', 'Переносить субтаски вместе с задачей'],
-    ['groupEnabled', 'Группировать субтаски списком'],
-    ['addMissing', 'Добавлять отсутствующие субтаски на доску'],
-    ['reloadAfterMove', 'Обновлять доску после переноса']
+    ['groupEnabled', 'Группировать субтаски списком']
   ];
 
   function mount(handlers) {

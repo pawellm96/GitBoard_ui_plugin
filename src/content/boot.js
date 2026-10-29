@@ -5,8 +5,8 @@
   var board = null;
   var panel = null;
   var href = location.href;
-  var scanTimer = 0;
   var observer = null;
+  var scanQueued = false;
   var chain = Promise.resolve();
   var recent = new Map();
 
@@ -32,18 +32,34 @@
   }
 
   function scheduleScan() {
-    window.clearTimeout(scanTimer);
-    scanTimer = window.setTimeout(applyGrouping, 200);
+    if (!(settings && settings.groupEnabled)) {
+      root.GitBoardDom.clearGrouping();
+      return;
+    }
+    if (scanQueued) return;
+    scanQueued = true;
+    window.requestAnimationFrame(function () {
+      scanQueued = false;
+      applyGrouping();
+    });
   }
 
   function observe() {
+    if (!settings || !settings.groupEnabled) {
+      if (observer) observer.disconnect();
+      return;
+    }
     if (!observer) {
       observer = new MutationObserver(function (records) {
-        var useful = records.some(function (record) {
-          var node = record.target instanceof Element ? record.target : record.target.parentElement;
-          if (!node || !node.closest) return false;
-          return !node.closest('.gitboard-panel, .gitboard-nest');
-        });
+        var useful = false;
+        for (var i = 0; i < records.length; i += 1) {
+          var target = records[i].target;
+          var node = target instanceof Element ? target : target.parentElement;
+          if (!node || !node.closest) continue;
+          if (node.closest('.gitboard-panel, .gitboard-nest')) continue;
+          useful = true;
+          break;
+        }
         if (useful) scheduleScan();
       });
     }
@@ -52,13 +68,13 @@
 
   function applyGrouping() {
     if (!board || !root.GitBoardCore.parseProjectLocation(location.href)) return;
-    if (observer) observer.disconnect();
-    try {
-      if (settings && settings.groupEnabled) root.GitBoardDom.applyGrouping(board);
-      else root.GitBoardDom.clearGrouping();
-    } finally {
-      if (settings && settings.groupEnabled) observe();
+    if (!(settings && settings.groupEnabled)) {
+      root.GitBoardDom.clearGrouping();
+      if (observer) observer.disconnect();
+      return;
     }
+    root.GitBoardDom.applyGrouping(board);
+    observe();
   }
 
   function parentHasChildren(itemId) {
@@ -192,15 +208,19 @@
     });
 
     window.addEventListener('message', onMessage);
-    chrome.storage.onChanged.addListener(function (changes, area) {
-      if (area !== 'local' || !changes[root.GitBoardSettings.KEY]) return;
-      var next = Object.assign({}, root.GitBoardSettings.DEFAULTS, changes[root.GitBoardSettings.KEY].newValue || {});
-      var tokenChanged = (settings.token || '') !== (next.token || '');
-      settings = next;
-      panel.sync(settings, board);
-      if (tokenChanged && root.GitBoardCore.parseProjectLocation(location.href)) activate();
-      else scheduleScan();
-    });
+    try {
+      chrome.storage.onChanged.addListener(function (changes, area) {
+        if (area !== 'local' || !changes[root.GitBoardSettings.KEY]) return;
+        var next = Object.assign({}, root.GitBoardSettings.DEFAULTS, changes[root.GitBoardSettings.KEY].newValue || {});
+        var tokenChanged = (settings.token || '') !== (next.token || '');
+        settings = next;
+        panel.sync(settings, board);
+        if (tokenChanged && root.GitBoardCore.parseProjectLocation(location.href)) activate();
+        else scheduleScan();
+      });
+    } catch (error) {
+      /* The extension was reloaded; this page still has the previous script. */
+    }
 
     window.setInterval(function () {
       if (location.href === href) return;

@@ -23,6 +23,13 @@
     '      }',
     '    }',
     '  }',
+    '  fields(first: 20) {',
+    '    nodes {',
+    '      __typename',
+    '      ... on ProjectV2SingleSelectField { id name options { id name } }',
+    '      ... on ProjectV2IterationField { id name }',
+    '    }',
+    '  }',
     '}'
   ].join('\n');
 
@@ -38,6 +45,7 @@
       '        pageInfo { hasNextPage endCursor }',
       '        nodes {',
       '          id',
+      '          fullDatabaseId',
       '          isArchived',
       '          fieldValues(first: 12) {',
       '            nodes {',
@@ -164,17 +172,23 @@
   }
 
   function tokenGraphql(token, query, variables) {
-    return chrome.runtime.sendMessage({
-      type: 'gitboard-graphql',
-      token: token,
-      query: query,
-      variables: variables || {}
-    }).then(function (response) {
-      if (!response || !response.ok) {
-        throw new Error((response && response.error) || 'GitHub API недоступен');
-      }
-      return response.data;
-    });
+    try {
+      return chrome.runtime.sendMessage({
+        type: 'gitboard-graphql',
+        token: token,
+        query: query,
+        variables: variables || {}
+      }).then(function (response) {
+        if (!response || !response.ok) {
+          throw new Error((response && response.error) || 'GitHub API недоступен');
+        }
+        return response.data;
+      }, function () {
+        return sessionGraphql(query, variables);
+      });
+    } catch (error) {
+      return sessionGraphql(query, variables);
+    }
   }
 
   function graphql(query, variables) {
@@ -213,14 +227,20 @@
     return list.find(function (view) { return view.layout === 'BOARD_LAYOUT'; }) || list[0] || null;
   }
 
-  function columnField(view) {
-    var nodes = (view && view.groupByFields && view.groupByFields.nodes) || [];
-    return nodes.find(function (node) {
-      return node && (
-        node.__typename === 'ProjectV2SingleSelectField' ||
-        node.__typename === 'ProjectV2IterationField'
-      );
-    }) || null;
+  function isColumnType(node) {
+    return node && (
+      node.__typename === 'ProjectV2SingleSelectField' ||
+      node.__typename === 'ProjectV2IterationField'
+    );
+  }
+
+  function columnField(view, project) {
+    var grouped = ((view && view.groupByFields && view.groupByFields.nodes) || []).find(isColumnType);
+    if (grouped) return grouped;
+    var fields = (project && project.fields && project.fields.nodes) || [];
+    return fields.find(function (node) {
+      return isColumnType(node) && /^status$/i.test(node.name || '');
+    }) || fields.find(isColumnType) || null;
   }
 
   function fetchAllItems(projectId) {
@@ -279,6 +299,7 @@
     if (!content || content.__typename !== 'Issue') return null;
     return {
       itemId: raw.id,
+      fullDatabaseId: raw.fullDatabaseId ? String(raw.fullDatabaseId) : null,
       status: statusOf(raw, fieldId),
       content: {
         type: 'Issue',
@@ -304,7 +325,7 @@
   function loadBoard(parsed) {
     return fetchProject(parsed).then(function (project) {
       var view = pickView(project.views && project.views.nodes, parsed.view);
-      var field = columnField(view);
+      var field = columnField(view, project);
       return fetchAllItems(project.id).then(function (rawItems) {
         var chain = Promise.resolve();
         rawItems.forEach(function (raw) {

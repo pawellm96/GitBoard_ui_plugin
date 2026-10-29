@@ -2,7 +2,7 @@
   'use strict';
 
   var settingsApi = globalThis.GitBoardSettings;
-  var fields = ['followEnabled', 'groupEnabled', 'addMissing', 'reloadAfterMove'];
+  var fields = ['groupEnabled'];
   var tokenInput = document.getElementById('token');
   var result = document.getElementById('result');
 

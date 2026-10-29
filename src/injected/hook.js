@@ -11,6 +11,67 @@
   var originalOpen = XMLHttpRequest.prototype.open;
   var originalSend = XMLHttpRequest.prototype.send;
 
+  var suppressUntil = 0;
+
+  function leavesProject(url) {
+    if (!url) return false;
+    try {
+      var parsed = new URL(String(url), location.href);
+      if (parsed.origin !== location.origin) return true;
+      return parsed.pathname !== location.pathname;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  if (window.navigation) {
+    window.navigation.addEventListener('navigate', function (event) {
+      if (Date.now() > suppressUntil) return;
+      var destination = event.destination && event.destination.url;
+      if (event.navigationType !== 'reload' && !leavesProject(destination)) return;
+      if (event.cancelable) event.preventDefault();
+    });
+  }
+
+  try {
+    var reload = Location.prototype.reload;
+    Location.prototype.reload = function () {
+      if (Date.now() < suppressUntil) return undefined;
+      return reload.apply(this, arguments);
+    };
+  } catch (error) {
+    /* Location.reload can be non-writable; navigation blocking still applies. */
+  }
+
+  function openBoardCard(path) {
+    var links = document.querySelectorAll('a[href]');
+    var link = null;
+    for (var i = 0; i < links.length; i += 1) {
+      var candidate = links[i];
+      if (candidate.closest('.gitboard-nest, .gitboard-panel')) continue;
+      if (core.normalizeIssuePath(candidate.getAttribute('href')) === path) {
+        link = candidate;
+        break;
+      }
+    }
+    if (!link) return;
+
+    suppressUntil = Date.now() + 1500;
+    var href = link.getAttribute('href');
+    link.removeAttribute('href');
+    link.click();
+    window.setTimeout(function () {
+      if (href != null && link.isConnected) link.setAttribute('href', href);
+    }, 1500);
+  }
+
+  window.addEventListener('message', function (event) {
+    if (event.source !== window || event.origin !== location.origin) return;
+    var data = event.data;
+    if (!data || data.source !== 'gitboard-content' || data.type !== 'open-card' || !data.path) return;
+    openBoardCard(data.path);
+  });
+
   function emit(updates) {
     if (!updates || !updates.length) return;
     try {
@@ -54,15 +115,25 @@
     return core.extractFieldUpdates(data).concat(core.extractFieldClears(raw));
   }
 
+  function requestUrl(input) {
+    if (typeof input === 'string') return input;
+    if (input && typeof input.url === 'string') return input.url;
+    return '';
+  }
+
   function collect(input, init) {
+    var url = requestUrl(input);
     var text = null;
     if (init && typeof init.body === 'string') text = init.body;
-    else if (typeof Request !== 'undefined' && input instanceof Request) {
+    else if (typeof Request !== 'undefined' && input instanceof Request && /graphql/i.test(url)) {
       try {
         return input.clone().text().then(fromText).catch(function () { return []; });
       } catch (error) {
         return Promise.resolve([]);
       }
+    }
+    if (text && !/graphql/i.test(url) && text.indexOf('singleSelectOptionId') === -1 && text.indexOf('clearProjectV2ItemFieldValue') === -1) {
+      return Promise.resolve([]);
     }
     return Promise.resolve(fromText(text));
   }

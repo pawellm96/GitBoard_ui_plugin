@@ -167,6 +167,7 @@
         status: '',
         number: null,
         itemId: null,
+        fullDatabaseId: null,
         contentId: null,
         onBoard: false,
         parentPath: null,
@@ -187,6 +188,7 @@
       if (data.status) node.status = data.status;
       if (data.number != null) node.number = data.number;
       if (data.itemId) node.itemId = data.itemId;
+      if (data.fullDatabaseId) node.fullDatabaseId = String(data.fullDatabaseId);
       if (data.contentId) node.contentId = data.contentId;
       if (data.onBoard) node.onBoard = true;
       if (data.parentPath) node.parentPath = data.parentPath;
@@ -213,6 +215,7 @@
         status: item.status || '',
         number: content.number,
         itemId: item.itemId,
+        fullDatabaseId: item.fullDatabaseId,
         contentId: content.id,
         onBoard: true,
         parentPath: normalizeIssuePath(content.parentUrl)
