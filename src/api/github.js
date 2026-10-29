@@ -159,7 +159,7 @@
   function sessionGraphql(query, variables) {
     return postGraphql(SESSION_URL, query, variables).catch(function (error) {
       if (!error || !error.retry) throw error;
-      return postGraphql(location.origin + '/graphql', query, variables);
+      return postGraphql(location.origin + '/api/graphql', query, variables);
     });
   }
 
@@ -409,7 +409,23 @@
     return Promise.resolve();
   }
 
+  function findPathByItemId(board, itemId) {
+    var nodes = board.hierarchy && board.hierarchy.nodes;
+    if (!nodes) return null;
+    var paths = Object.keys(nodes);
+    for (var i = 0; i < paths.length; i += 1) {
+      if (nodes[paths[i]].itemId === itemId) return paths[i];
+    }
+    return null;
+  }
+
   function moveDescendants(board, update, settings) {
+    var originPath = findPathByItemId(board, update.itemId);
+    var origin = originPath ? board.hierarchy.nodes[originPath] : null;
+    if (!origin || !origin.children || origin.children.length === 0) {
+      return Promise.resolve({ moved: [], failed: [], skipped: [] });
+    }
+
     var moved = [];
     var failed = [];
     var skipped = [];
