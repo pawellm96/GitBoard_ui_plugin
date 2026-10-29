@@ -5,6 +5,8 @@
   var DEFAULTS = {
     followEnabled: true,
     groupEnabled: false,
+    groupTypes: [],
+    groupLabels: [],
     addMissing: true,
     reloadAfterMove: true,
     token: ''

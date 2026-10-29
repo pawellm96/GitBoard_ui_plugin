@@ -185,6 +185,19 @@
   margin-top: 2px;
 }
 
+.gitboard-filter-title {
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.gitboard-filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 120px;
+  overflow: auto;
+}
+
 .gitboard-hint,
 .gitboard-status {
   margin: 0;

@@ -274,13 +274,53 @@
     });
   }
 
-  function applyGrouping(board) {
+  function selectedNames(list) {
+    return Array.isArray(list) ? list.filter(Boolean) : [];
+  }
+
+  function matchesGroupFilter(node, settings) {
+    if (!node) return false;
+    var types = selectedNames(settings && settings.groupTypes);
+    var labels = selectedNames(settings && settings.groupLabels);
+    if (!types.length && !labels.length) return true;
+    if (types.length && types.indexOf(node.issueType || '') === -1) return false;
+    if (!labels.length) return true;
+    var own = node.labels || [];
+    for (var i = 0; i < labels.length; i += 1) {
+      if (own.indexOf(labels[i]) !== -1) return true;
+    }
+    return false;
+  }
+
+  function groupingSelection(hierarchy, settings) {
+    var hidden = {};
+    var roots = [];
+    if (!hierarchy) return { hidden: hidden, roots: roots };
+
+    function hideChildren(path) {
+      var node = hierarchy.nodes[path];
+      if (!node) return;
+      (node.children || []).forEach(function (childPath) {
+        hidden[childPath] = true;
+        hideChildren(childPath);
+      });
+    }
+
+    (hierarchy.rootPaths || []).forEach(function (path) {
+      if (!matchesGroupFilter(hierarchy.nodes[path], settings)) return;
+      roots.push(path);
+      hideChildren(path);
+    });
+    return { hidden: hidden, roots: roots };
+  }
+
+  function applyGrouping(board, settings) {
     if (!board || !board.hierarchy) return;
 
     var cards = indexCards();
     var hierarchy = board.hierarchy;
-    var hide = {};
-    hierarchy.childPaths.forEach(function (path) { hide[path] = true; });
+    var selection = groupingSelection(hierarchy, settings);
+    var hide = selection.hidden;
 
     cards.forEach(function (card, path) {
       if (hide[path]) {
@@ -301,7 +341,7 @@
 
     var seenRoots = {};
     var nests = document.querySelectorAll('.gitboard-nest');
-    hierarchy.rootPaths.forEach(function (path) {
+    selection.roots.forEach(function (path) {
       var card = cards.get(path);
       var node = hierarchy.nodes[path];
       if (!card || !node || !node.children.length) return;

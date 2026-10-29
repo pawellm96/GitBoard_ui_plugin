@@ -10,10 +10,14 @@
   var chain = Promise.resolve();
   var recent = new Map();
 
+  function isBoardView(current) {
+    return !!(current && current.view && current.view.layout === 'BOARD_LAYOUT');
+  }
+
   function statusLine(current) {
     if (!current) return 'Откройте проект GitHub.';
-    if (!current.view || current.view.layout !== 'BOARD_LAYOUT') {
-      return 'Откройте вид Board, чтобы работать с колонками.';
+    if (!isBoardView(current)) {
+      return 'Группировка субтасков работает только на виде Board.';
     }
     if (!current.field) {
       return 'Сгруппируйте доску по полю, обычно Status.';
@@ -32,8 +36,9 @@
   }
 
   function scheduleScan() {
-    if (!(settings && settings.groupEnabled)) {
+    if (!(settings && settings.groupEnabled && isBoardView(board))) {
       root.GitBoardDom.clearGrouping();
+      if (observer) observer.disconnect();
       return;
     }
     if (scanQueued) return;
@@ -45,7 +50,7 @@
   }
 
   function observe() {
-    if (!settings || !settings.groupEnabled) {
+    if (!settings || !settings.groupEnabled || !isBoardView(board)) {
       if (observer) observer.disconnect();
       return;
     }
@@ -68,12 +73,12 @@
 
   function applyGrouping() {
     if (!board || !root.GitBoardCore.parseProjectLocation(location.href)) return;
-    if (!(settings && settings.groupEnabled)) {
+    if (!(settings && settings.groupEnabled && isBoardView(board))) {
       root.GitBoardDom.clearGrouping();
       if (observer) observer.disconnect();
       return;
     }
-    root.GitBoardDom.applyGrouping(board);
+    root.GitBoardDom.applyGrouping(board, settings);
     observe();
   }
 

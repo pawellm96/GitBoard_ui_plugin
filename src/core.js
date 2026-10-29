@@ -170,6 +170,8 @@
         fullDatabaseId: null,
         contentId: null,
         onBoard: false,
+        issueType: '',
+        labels: [],
         parentPath: null,
         children: []
       };
@@ -191,6 +193,8 @@
       if (data.fullDatabaseId) node.fullDatabaseId = String(data.fullDatabaseId);
       if (data.contentId) node.contentId = data.contentId;
       if (data.onBoard) node.onBoard = true;
+      if (data.issueType) node.issueType = data.issueType;
+      if (data.labels && data.labels.length) node.labels = data.labels.slice();
       if (data.parentPath) node.parentPath = data.parentPath;
       return node;
     }
@@ -218,6 +222,8 @@
         fullDatabaseId: item.fullDatabaseId,
         contentId: content.id,
         onBoard: true,
+        issueType: content.issueType || '',
+        labels: content.labels || [],
         parentPath: normalizeIssuePath(content.parentUrl)
       });
       (content.subIssues || []).forEach(function (sub) {

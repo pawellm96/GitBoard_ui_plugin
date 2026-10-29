@@ -66,6 +66,8 @@
       '            __typename',
       '            ... on Issue {',
       '              id number title url state',
+      '              issueType { name }',
+      '              labels(first: 20) { nodes { name } }',
       '              parent { url }',
       '              subIssues(first: 50) {',
       '                pageInfo { hasNextPage endCursor }',
@@ -221,8 +223,7 @@
   function pickView(views, viewNumber) {
     var list = (views || []).filter(Boolean);
     if (viewNumber != null) {
-      var match = list.find(function (view) { return view.number === viewNumber; });
-      if (match) return match;
+      return list.find(function (view) { return view.number === viewNumber; }) || null;
     }
     return list.find(function (view) { return view.layout === 'BOARD_LAYOUT'; }) || list[0] || null;
   }
@@ -308,6 +309,10 @@
         title: content.title,
         url: content.url,
         state: content.state,
+        issueType: content.issueType && content.issueType.name || '',
+        labels: ((content.labels && content.labels.nodes) || []).map(function (label) {
+          return label && label.name;
+        }).filter(Boolean),
         parentUrl: content.parent && content.parent.url,
         subIssues: (content.subIssues && content.subIssues.nodes || []).filter(Boolean).map(function (sub) {
           return {
